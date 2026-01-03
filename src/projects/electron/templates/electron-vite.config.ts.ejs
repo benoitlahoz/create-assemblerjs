@@ -1,0 +1,41 @@
+import { resolve } from 'path';
+import { defineConfig, externalizeDepsPlugin, swcPlugin } from 'electron-vite';
+<% if (isVue()) { %>import vue from '@vitejs/plugin-vue';
+import vitePluginVueDevtools from 'vite-plugin-vue-devtools';
+<% } %><% if (isReact()) { %>import react from '@vitejs/plugin-react';
+<% } %><% if (isSolid()) { %>import solid from 'vite-plugin-solid';
+<% } %><% if (isSvelte()) { %>import { svelte } from '@sveltejs/vite-plugin-svelte';
+<% } %><% if (hasOption('tailwindcss')) { %>import tailwindcss from '@tailwindcss/vite';
+<% } %>
+
+export default defineConfig({
+  main: {
+    plugins: [externalizeDepsPlugin(), swcPlugin()],
+    resolve: {
+      alias: {
+        '@/features': resolve('src/features'),
+        '@/main': resolve('src/main'),
+        '@/renderer': resolve('src/renderer/src'),
+        '@/preload': resolve('src/preload'),
+        '@/windows': resolve('src/windows'),
+        '@/resources': resolve('resources'),
+      },
+    },
+  },
+  preload: {
+    plugins: [externalizeDepsPlugin(), swcPlugin()],
+  },
+  renderer: {
+    resolve: {
+      alias: {
+        '@/features': resolve('src/features'),
+        '@/main': resolve('src/main'),
+        '@/renderer': resolve('src/renderer/src'),
+        '@/preload': resolve('src/preload'),
+        '@/windows': resolve('src/windows'),
+        '@/resources': resolve('resources'),
+      },
+    },
+    plugins: [<% if (hasOption('tailwindcss')) { %>tailwindcss(), <% } %><% if (isVue()) { %>vitePluginVueDevtools(), vue(), <% } %><% if (isReact()) { %>react(), <% } %><% if (isSolid()) { %>solid(), <% } %><% if (isSvelte()) { %>svelte(), <% } %>swcPlugin()],
+  },
+});

@@ -1,0 +1,22 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "include": [
+    "src/renderer/src/env.d.ts",
+    "src/renderer/src/**/*",
+    "src/renderer/src/**/*.tsx"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": ".",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "paths": {
+      "@/features/*": ["src/features/*"],
+      "@/main/*": ["src/main/*"],
+      "@/renderer/*": ["src/renderer/src/*"],
+      "@/preload/*": ["src/preload/*"],
+      "@/windows/*": ["src/windows/*"],
+      "@/resources/*": ["resources/*"]
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "create-assemblerjs",
+  "version": "0.0.1",
+  "description": "Create apps and libraries with assemblerjs",
+  "author": "Benoît LAHOZ <info@benoitlahoz.io>",
+  "license": "MIT",
+  "type": "module",
+  "main": "bin/create-assemblerjs.js",
+  "require": "bin/create-assemblerjs.js",
+  "bin": "bin/create-assemblerjs.js",
+  "scripts": {
+    "dev": "NODE_ENV=development NODE_TLS_REJECT_UNAUTHORIZED=0 node --no-warnings=ExperimentalWarning --loader ts-node/esm src/index.ts",
+    "start": "NODE_ENV=production node bin/create-assemblerjs.js",
+    "build": "vite build && chmod +x bin/create-assemblerjs.js",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src/**/*.{js,ts}",
+    "lint:fix": "eslint src/**/*.{js,ts} --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@rollup/plugin-swc": "^0.4.0",
+    "@swc/core": "^1.13.5",
+    "@types/node": "^24.9.1",
+    "@types/yargs": "^17.0.33",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "@typescript-eslint/parser": "^8.18.1",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0",
+    "terser": "^5.44.0",
+    "ts-node": "^10.9.2",
+    "tsc": "^2.0.4",
+    "typescript": "^5.7.3",
+    "vite": "^7.1.12",
+    "vite-plugin-externalize-deps": "^0.10.0",
+    "vite-plugin-static-copy": "^3.1.4",
+    "vitest": "^4.0.1"
+  },
+  "dependencies": {
+    "@assemblerjs/core": "^0.9.6",
+    "assemblerjs": "^0.9.7",
+    "consola": "^3.4.2",
+    "ejs": "^3.1.10",
+    "inquirer": "^12.10.0",
+    "ora": "^9.0.0",
+    "reflect-metadata": "^0.2.2",
+    "yargs": "^18.0.0"
+  }
+}

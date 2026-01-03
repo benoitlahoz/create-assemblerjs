@@ -1,0 +1,65 @@
+// Vanilla JavaScript App
+export class App {
+  private container: HTMLElement | null = null
+
+  constructor(selector: string = '#app') {
+    this.container = document.querySelector(selector)
+    if (!this.container) {
+      throw new Error(`Container element "${selector}" not found`)
+    }
+  }
+
+  render(): void {
+    if (!this.container) return
+
+    this.container.innerHTML = `
+      <div class="app<% if (hasOption('tailwindcss')) { %> min-h-screen bg-gray-100 flex items-center justify-center<% } %>">
+        <div class="container<% if (hasOption('tailwindcss')) { %> mx-auto p-8 bg-white rounded-lg shadow-lg<% } %>">
+          <h1<% if (hasOption('tailwindcss')) { %> class="text-3xl font-bold text-center mb-6"<% } %>>Welcome to Electron + Vanilla</h1>
+          <p<% if (hasOption('tailwindcss')) { %> class="text-gray-600 text-center"<% } %>>Your app is ready!</p>
+        </div>
+      </div>
+    `
+
+    <% if (!hasOption('tailwindcss')) { %>this.addStyles()<% } %>
+  }
+
+  <% if (!hasOption('tailwindcss')) { %>private addStyles(): void {
+    const styles = `
+      .app {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f5f5f5;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        font-size: 2rem;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 1.5rem;
+      }
+
+      p {
+        color: #666;
+        text-align: center;
+      }
+    `
+
+    const styleElement = document.createElement('style')
+    styleElement.textContent = styles
+    document.head.appendChild(styleElement)
+  }<% } %>
+}
+
+export default App

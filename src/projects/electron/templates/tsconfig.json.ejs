@@ -1,0 +1,22 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.node.json" },
+    { "path": "./tsconfig.web.json" }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "paths": {
+      "@/features/*": ["src/features/*"],
+      "@/main/*": ["src/main/*"],
+      "@/preload/*": ["src/preload/*"],
+      "@/renderer/*": ["src/renderer/src/*"],
+      "@/windows/*": ["src/windows/*"]
+    }
+  }<% if (isVue()) { %>,
+  "vueCompilerOptions": {<% if (hasOption('pug')) { %>
+    "plugins": ["@vue/language-plugin-pug"]<% } %>
+  }<% } %>
+}

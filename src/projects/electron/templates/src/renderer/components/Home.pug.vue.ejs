@@ -1,0 +1,17 @@
+template(lang="pug")
+  .home
+    h1 Home
+    p Welcome to the home page!
+    router-link(to="/about") Go to About
+
+script(setup lang="ts")
+  // Home component logic
+
+style(scoped)
+  .home {
+    padding: 20px;
+  }
+
+  .home h1 {
+    color: #42b883;
+  }

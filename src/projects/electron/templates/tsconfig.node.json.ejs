@@ -1,0 +1,33 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+  "include": [
+    "index.d.ts",
+    "electron.vite.config.*",
+    "src/main/**/*",
+    "src/renderer/**/*",
+    "src/preload/**/*",
+    "src/features/**/*",
+    "src/windows/**/*",
+    "resources/**/*"
+  ],
+  "exclude": ["**/*.spec.ts"],
+  "compilerOptions": {
+    "composite": true,
+    "baseUrl": "./",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["electron-vite/node"],
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "paths": {
+      "@/features/*": ["src/features/*"],
+      "@/main/*": ["src/main/*"],
+      "@/preload/*": ["src/preload/*"],
+      "@/renderer/*": ["src/renderer/src/*"],
+      "@/windows/*": ["src/windows/*"]
+    }
+  }<% if (hasOption('vue')) { %>,
+  "vueCompilerOptions": {<% if (hasOption('pug')) { %>
+    "plugins": ["@vue/language-plugin-pug"]<% } %>
+  }<% } %>
+}

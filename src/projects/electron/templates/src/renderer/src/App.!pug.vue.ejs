@@ -1,0 +1,47 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const message = ref('Hello from Vue!')
+</script>
+
+<template>
+  <div class="app<% if (hasOption('tailwindcss')) { %> min-h-screen bg-gray-100 flex items-center justify-center<% } %>">
+    <div class="container<% if (hasOption('tailwindcss')) { %> mx-auto p-8 bg-white rounded-lg shadow-lg<% } %>">
+      <h1<% if (hasOption('tailwindcss')) { %> class="text-3xl font-bold text-center mb-6"<% } %>>Welcome to Electron + Vue</h1>
+      <p<% if (hasOption('tailwindcss')) { %> class="text-gray-600 text-center"<% } %>>Your app is ready!</p>
+    </div>
+  </div>
+</template>
+
+<% if (hasOption('tailwindcss')) { %><style>
+/* Tailwind CSS classes are handled by the framework */
+</style><% } else { %><style scoped>
+.app {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+p {
+  color: #666;
+  text-align: center;
+}
+</style><% } %>

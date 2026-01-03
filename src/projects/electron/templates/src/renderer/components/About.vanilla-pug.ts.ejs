@@ -1,0 +1,35 @@
+export default class About {
+  private container: HTMLElement;
+
+  constructor(container: HTMLElement) {
+    this.container = container;
+  }
+
+  render(): HTMLElement {
+    const div = document.createElement('div');
+    div.className = 'about';
+    div.style.padding = '20px';
+
+    const h1 = document.createElement('h1');
+    h1.textContent = 'About';
+    h1.style.color = '#007acc';
+
+    const p = document.createElement('p');
+    p.textContent = 'This is the about page!';
+
+    const button = document.createElement('button');
+    button.textContent = 'Go to Home';
+    button.addEventListener('click', () => {
+      // Use global router or import router
+      if (window.router) {
+        window.router.navigate('/home');
+      }
+    });
+
+    div.appendChild(h1);
+    div.appendChild(p);
+    div.appendChild(button);
+
+    return div;
+  }
+}

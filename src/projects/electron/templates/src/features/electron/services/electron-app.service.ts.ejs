@@ -1,0 +1,75 @@
+import { AbstractAssemblage, Assemblage } from 'assemblerjs';
+import url from 'node:url';
+import { app, protocol, net } from 'electron';
+import { electronApp } from '@electron-toolkit/utils';
+import { AppIpcChannel } from '@/preload/channels';
+import { AppListener, AppOn } from '../decorators/app-listener.decorator';
+import { IpcListener } from '@/features/ipc/main';
+import { IpcOn } from '@/features/ipc/universal';
+import { ElectronWindow, ElectronWindowsService } from '@/features/windows/main';
+
+const AppUserModelId = 'io.benoitlahoz';
+const MainWindowName = 'main';
+
+@AppListener()
+@IpcListener()
+@Assemblage()
+export class ElectronAppService implements AbstractAssemblage {
+  constructor(private electronWindowsService: ElectronWindowsService) {
+    // Scheme must be registered before the app is ready
+    protocol.registerSchemesAsPrivileged([
+      { scheme: 'app', privileges: { secure: true, standard: true } },
+    ]);
+  }
+
+  public async onInit(): Promise<void> {
+    await app.whenReady();
+
+    protocol.handle('app', (request) => {
+      let filePath = request.url.substring('app://'.length);
+
+      if (process.platform === 'darwin' && filePath.startsWith('users/')) {
+        filePath = '/Users/' + filePath.slice('users/'.length);
+      }
+
+      try {
+        return net.fetch(url.pathToFileURL(filePath).toString());
+      } catch (error) {
+        throw error;
+      }
+    });
+
+    await this.electronWindowsService.whenReady();
+
+    this.configure();
+
+    await this.electronWindowsService.open(MainWindowName);
+  }
+
+  private configure(): void {
+    electronApp.setAppUserModelId(AppUserModelId);
+  }
+
+  @AppOn('window-all-closed')
+  public onWindowsAllClosed(): void {
+    if (process.platform !== 'darwin') {
+      this.quit();
+    }
+  }
+
+  @AppOn('activate', true)
+  public async onActivate(): Promise<void> {
+    if (ElectronWindow.getByName(MainWindowName) === undefined) {
+      await this.electronWindowsService.open(MainWindowName);
+    }
+  }
+
+  @IpcOn(AppIpcChannel.Quit)
+  public quit(): void {
+    app.quit();
+  }
+
+  public exit(code: number): void {
+    app.exit(code);
+  }
+}

@@ -1,0 +1,48 @@
+import 'reflect-metadata';
+import { app } from 'electron';
+import { is } from '@electron-toolkit/utils';
+import { AbstractAssemblage, Assemblage, Assembler } from 'assemblerjs';
+import { Result, Task } from '@assemblerjs/core';
+import { ElectronModule } from '@/features/electron/electron.module';
+
+import { consola } from 'consola';
+consola.wrapConsole();
+
+@Assemblage({
+  inject: [
+    [ElectronModule]
+  ],
+  use: [
+    [
+      'env',
+      <MainEnv>{
+        dev: is.dev,
+        devUrl: process.env['ELECTRON_RENDERER_URL'],
+      },
+    ],
+  ],
+})
+export class MainApp implements AbstractAssemblage {
+  constructor(
+    public electronModule: ElectronModule,
+  ) {}
+}
+
+const task = Task.of(() => Assembler.build(MainApp));
+task
+  .fork<MainApp, Error>()
+  .then((result: Result<MainApp, Error>) => {
+    result.fold(
+      (error) => {
+        console.error(error);
+        app.quit();
+      },
+      () => {
+        console.info('App was successfully initialized.');
+      },
+    );
+  })
+  .catch((err) => {
+    console.error(err);
+    app.quit();
+  });

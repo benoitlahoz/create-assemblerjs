@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Electron</title>
+    <meta name="color-scheme" content="light dark" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * 'self' data: https: blob: app:; frame-src 'self' https: blob:; connect-src 'self' https://fastly.jsdelivr.net;"
+    />
+  </head>
+
+  <body>
+    <div id="<% if (isReact()) { %>root<% } else { %>app<% } %>"></div>
+    <script type="module" src="/src/main.<% if (isReact()) { %>tsx<% } else { %>ts<% } %>"></script>
+  </body>
+</html>

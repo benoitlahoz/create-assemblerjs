@@ -1,0 +1,108 @@
+{
+  "name": "<%= packageName %>",
+  "version": "0.0.1",
+  "main": "./out/main/index.js",
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "eslint --cache .",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",<% if (isVue()) { %>
+    "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "yarn run typecheck:node && yarn run typecheck:web",<% } else if (isReact()) { %>
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "yarn run typecheck:node && yarn run typecheck:web",<% } else { %>
+    "typecheck": "yarn run typecheck:node",<% } %>
+    "generate-icons": "electron-icon-builder --input ./resources/icon.png --output ./build --flatten && sh ./scripts/clean-icon-folder.sh",
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev --watch",
+    "build": "electron-vite build",
+    "postinstall": "electron-builder install-app-deps",
+    "build:unpack": "yarn run build && electron-builder --dir",
+    "build:win": "yarn run build && electron-builder --win",
+    "build:mac": "yarn run build && electron-builder --mac",
+    "build:linux": "yarn run build && electron-builder --linux",
+    "test": "vitest"<% if (isVue() && hasOption('shadcn')) { %>,
+    "add:component": "npx shadcn-vue@latest add"<% } %>
+  },
+  "dependencies": {
+    "@assemblerjs/core": "^0.9.6",
+    "@assemblerjs/dto": "^0.8.8",
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",<% if (isVue()) { %>
+    "@tanstack/vue-table": "^8.21.3",
+    "@vueuse/core": "^13.9.0",<% } %><% if (isReact()) { %>
+    "@tanstack/react-table": "^8.21.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",<% } %><% if (isSolid()) { %>
+    "solid-js": "^1.9.3",<% } %><% if (isSvelte()) { %>
+    "svelte": "^5.7.0",<% } %>
+    "assemblerjs": "^0.9.7",<% if (isVue() && hasOption('shadcn')) { %>
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",<% } %>
+    "electron-updater": "^6.3.9",<% if (isVue() && hasOption('shadcn')) { %>
+    "lucide-vue-next": "^0.542.0",<% } %>
+    "reflect-metadata": "^0.2.2"<% if (isVue()) { %>,
+    "reka-ui": "^2.5.1",
+    "vue-router": "^4.5.1"<% } %><% if (isReact()) { %>,
+    "react-router-dom": "^7.1.5"<% } %><% if (isSolid()) { %>,
+    "@solidjs/router": "^0.15.4"<% } %>
+  },
+  "devDependencies": {
+    "@electron-toolkit/eslint-config-prettier": "3.0.0",
+    "@electron-toolkit/eslint-config-ts": "^3.0.0",
+    "@electron-toolkit/tsconfig": "^1.0.1",
+    "@swc/core": "^1.13.5",<% if (hasOption('tailwindcss')) { %>
+    "@tailwindcss/vite": "^4.1.12",<% } %>
+    "@types/node": "^22.16.5",<% if (isVue()) { %>
+    "@vitejs/plugin-vue": "^6.0.0",<% } %><% if (isReact()) { %>
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",<% } %><% if (isSolid()) { %>
+    "vite-plugin-solid": "^2.10.3",<% } %><% if (isSvelte()) { %>
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",<% } %><% if (isVue() && hasOption('pug')) { %>
+    "@vue/language-plugin-pug": "^3.0.6",<% } %>
+    "electron": "^26.0.0",
+    "electron-builder": "^25.1.8",
+    "electron-icon-builder": "^2.0.1",
+    "electron-vite": "^4.0.0",
+    "eslint": "^9.31.0",<% if (isVue()) { %>
+    "eslint-plugin-vue": "^10.3.0",<% } %><% if (isReact()) { %>
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.1.0",<% } %><% if (isSvelte()) { %>
+    "eslint-plugin-svelte": "^2.47.0",<% } %>
+    "prettier": "^3.6.2",<% if (isVue() && hasOption('pug')) { %>
+    "pug": "^3.0.3",<% } %><% if (hasOption('tailwindcss')) { %>
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.12",
+    "tw-animate-css": "^1.3.7",<% } %>
+    "typescript": "^5.8.3",
+    "vite": "^7.0.5",<% if (isVue()) { %>
+    "vite-plugin-vue-devtools": "^8.0.1",<% } %>
+    "vitest": "^3.2.4"<% if (isVue()) { %>,
+    "vue": "^3.5.17",
+    "vue-eslint-parser": "^10.2.0",
+    "vue-tsc": "^3.0.3"<% } %>
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "supportedArchitectures": {
+    "os": [
+      "current",
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "cpu": [
+      "current",
+      "x64",
+      "ia32",
+      "arm64"
+    ],
+    "libc": [
+      "current",
+      "glibc",
+      "musl"
+    ]
+  }
+}

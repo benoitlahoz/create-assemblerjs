@@ -1,0 +1,132 @@
+<% if (isVue()) { %>import { createRouter, createWebHistory } from 'vue-router';
+import Home from '@/renderer/components/Home.vue';
+import About from '@/renderer/components/About.vue';
+
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: Home
+  },
+  {
+    path: '/about',
+    name: 'About',
+    component: About
+  }
+];
+
+export const router = createRouter({
+  history: createWebHistory(),
+  routes
+});
+<% } else if (isReact()) { %>import { createBrowserRouter, Navigate } from 'react-router-dom';
+import Home from '@/renderer/components/Home';
+import About from '@/renderer/components/About';
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Navigate to="/home" replace />
+  },
+  {
+    path: '/home',
+    element: <Home />
+  },
+  {
+    path: '/about',
+    element: <About />
+  }
+]);
+<% } else if (isSolid()) { %>import { Router, Route } from '@solidjs/router';
+import Home from '@/renderer/components/Home';
+import About from '@/renderer/components/About';
+
+export function AppRouter() {
+  return (
+    <Router>
+      <Route path="/" component={Home} />
+      <Route path="/home" component={Home} />
+      <Route path="/about" component={About} />
+    </Router>
+  );
+}
+<% } else if (isSvelte()) { %>import Home from '@/renderer/components/Home.svelte';
+import About from '@/renderer/components/About.svelte';
+
+export const routes = {
+  '/': Home,
+  '/home': Home,
+  '/about': About
+};
+
+// Simple router for Svelte
+export class Router {
+  private currentPath: string = '/';
+  private component: any = null;
+
+  constructor() {
+    this.currentPath = window.location.pathname || '/';
+    this.navigate(this.currentPath);
+    
+    window.addEventListener('popstate', () => {
+      this.navigate(window.location.pathname);
+    });
+  }
+
+  navigate(path: string) {
+    this.currentPath = path;
+    this.component = routes[path] || routes['/'];
+    window.history.pushState({}, '', path);
+  }
+
+  getCurrentComponent() {
+    return this.component;
+  }
+}
+
+export const router = new Router();
+<% } else { %>// Vanilla JavaScript Router
+import Home from '@/renderer/components/Home';
+import About from '@/renderer/components/About';
+
+const routes = {
+  '/': Home,
+  '/home': Home,
+  '/about': About
+};
+
+export class Router {
+  private currentPath: string = '/';
+  private container: HTMLElement | null = null;
+
+  constructor(containerSelector: string = '#app') {
+    this.container = document.querySelector(containerSelector);
+    this.currentPath = window.location.pathname || '/';
+    
+    window.addEventListener('popstate', () => {
+      this.navigate(window.location.pathname);
+    });
+    
+    this.navigate(this.currentPath);
+  }
+
+  navigate(path: string) {
+    this.currentPath = path;
+    const ComponentClass = routes[path] || routes['/'];
+    
+    if (this.container && ComponentClass) {
+      this.container.innerHTML = '';
+      const component = new ComponentClass(this.container);
+      component.render();
+    }
+    
+    window.history.pushState({}, '', path);
+  }
+
+  getCurrentPath(): string {
+    return this.currentPath;
+  }
+}
+
+export const router = new Router();
+<% } %>

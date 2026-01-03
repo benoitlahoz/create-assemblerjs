@@ -1,0 +1,68 @@
+import { BrowserWindow, webContents, type IpcMainEvent } from 'electron';
+import { Assemblage, Context, type AssemblerContext } from 'assemblerjs';
+import { Await } from '@assemblerjs/core';
+import { WindowIpcChannel } from '@/preload/channels';
+import { Windows } from '@/windows/windows';
+import { IpcHandle, IpcListener } from '@/features/ipc/main';
+import { ElectronWindow } from './classes/electron-window';
+
+@IpcListener()
+@Assemblage({
+  inject: Object.values(Windows).map((win) => [win]) as any,
+})
+export class ElectronWindowsService {
+  public ready = false;
+
+  constructor(@Context() private context: AssemblerContext) {}
+
+  public async onInit(): Promise<void> {
+    this.ready = true;
+  }
+
+  /**
+   * Open a window by its name.
+   *
+   * @param { string } name The name of the window.
+   * @returns { ElectronWindow } The window.
+   */
+  public async open(name: string): Promise<ElectronWindow | undefined> {
+    const existing = ElectronWindow.getByName(name);
+    if (existing && !existing.isDestroyed()) {
+      if (existing.isMinimized()) existing.restore();
+      existing.focus();
+      return existing;
+    }
+
+    const win: ElectronWindow | undefined = this.context.require(Windows[name]);
+    if (!win) return undefined;
+    win.focus();
+    return win;
+  }
+
+  public get length(): number {
+    return webContents.getAllWebContents().length;
+  }
+
+  @IpcHandle(WindowIpcChannel.GetName)
+  public async getWindowName(event: IpcMainEvent): Promise<string | undefined> {
+    const win: ElectronWindow | null = BrowserWindow.fromWebContents(
+      event.sender,
+    ) as ElectronWindow | null;
+    return win?.name;
+  }
+
+  /**
+   * Send data to all windows listening to a specific channel.
+   *
+   * @param { string } channel The channel to send to.
+   * @param { any } payload The data to send.
+   */
+  public sendAll(channel: string, payload: any): void {
+    ElectronWindow.sendAll(channel, payload);
+  }
+
+  @Await('ready')
+  public async whenReady(): Promise<void> {
+    return;
+  }
+}

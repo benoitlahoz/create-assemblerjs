@@ -1,0 +1,26 @@
+import { AbstractAssemblage, Assemblage, Use } from 'assemblerjs';
+import { ElectronAppService } from './services/electron-app.service';
+import { ElectronWindowsService } from '@/features/windows/main';
+import { ElectronMenusService } from '@/features/menus/main';
+import { FsService } from '@/features/fs/main';
+
+@Assemblage({
+  inject: [[ElectronAppService], [ElectronWindowsService], [ElectronMenusService]],
+})
+export class ElectronModule implements AbstractAssemblage {
+  constructor(
+    @Use('env') public env: MainEnv,
+    public fsService: FsService,
+    public appService: ElectronAppService,
+    public windowsService: ElectronWindowsService,
+    public menusService: ElectronMenusService,
+  ) {}
+
+  public async onInit(): Promise<void> {
+    const dataPath = this.env.dataPath;
+    await this.fsService.ensureDir(dataPath);
+
+    const logsPath = this.env.logsPath;
+    await this.fsService.ensureDir(logsPath);
+  }
+}

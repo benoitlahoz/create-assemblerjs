@@ -1,0 +1,23 @@
+<script>
+  import { router } from '@/windows/router';
+  
+  function goToHome() {
+    router.navigate('/home');
+  }
+</script>
+
+<div class="about">
+  <h1>About</h1>
+  <p>This is the about page!</p>
+  <button on:click={goToHome}>Go to Home</button>
+</div>
+
+<style>
+  .about {
+    padding: 20px;
+  }
+  
+  .about h1 {
+    color: #ff3e00;
+  }
+</style>
