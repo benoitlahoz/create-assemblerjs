@@ -1,0 +1,29 @@
+<% if (isVue()) { %>import { AssemblerContext } from 'assemblerjs';
+import { InjectionKey } from 'vue';
+
+/**
+ * Vue injection key for AssemblerJS context
+ */
+export const ContextInjectionKey: InjectionKey<AssemblerContext> = Symbol('AppContext');
+<% } else if (isReact()) { %>import { createContext } from 'react';
+import { AssemblerContext } from 'assemblerjs';
+
+/**
+ * React context for AssemblerJS
+ */
+export const AssemblerReactContext = createContext<AssemblerContext | null>(null);
+<% } else if (isSolid()) { %>import { createContext } from 'solid-js';
+import { AssemblerContext } from 'assemblerjs';
+
+/**
+ * Solid context for AssemblerJS
+ */
+export const AssemblerSolidContext = createContext<AssemblerContext | null>(null);
+<% } else if (isSvelte()) { %>/**
+ * Svelte context key for AssemblerJS
+ */
+export const ASSEMBLER_CONTEXT_KEY = Symbol('AssemblerContext');
+<% } else { %>/**
+ * Vanilla JS uses global context storage (see useContext.ts)
+ */
+<% } %>

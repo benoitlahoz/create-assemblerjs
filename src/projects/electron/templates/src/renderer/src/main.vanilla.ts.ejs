@@ -1,32 +1,16 @@
-import { AbstractAssemblage, Assemblage, Assembler } from 'assemblerjs';
+import { AbstractAssemblage, Assemblage, Assembler, Context, AssemblerContext } from 'assemblerjs';
 import { Task } from '@assemblerjs/core';
-<% if (isVue()) { %>import { createApp } from 'vue';
-import { router } from '@/windows/router';
-import App from './App.vue';
-<% } else if (isReact()) { %>import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { RouterProvider } from 'react-router-dom';
 import { router } from '@/windows/router';
 import App from './App';
-<% } else if (isSolid()) { %>import { render } from 'solid-js/web';
-import { AppRouter } from '@/windows/router';
-import App from './App';
-<% } else if (isSvelte()) { %>import { router } from '@/windows/router';
-import App from './App.svelte';
-<% } else { %>import { router } from '@/windows/router';
-import App from './App';
-<% } %>
+import { initializeContext } from '@/renderer/providers/AssemblerProvider';
 
 @Assemblage()
 class MainApp implements AbstractAssemblage {
-<% if (isSvelte()) { %>  private app: App | null = null;
-<% } %>
-  constructor() {}
+  constructor(@Context() private context: AssemblerContext) {}
 
   public async onInit(): Promise<void> {
-<% if (isVue()) { %>    const app = createApp(App);
-    app.use(router);
-    app.mount('#app');
+    // Initialize global context for vanilla JS
+    initializeContext(this.context);
     
     await router.isReady();
     console.log('Vue Router initialized');
@@ -67,19 +51,39 @@ class MainApp implements AbstractAssemblage {
       throw new Error('Root element not found');
     }
 
+import { AbstractAssemblage, Assemblage, Assembler, Context, AssemblerContext } from 'assemblerjs';
+import { Task } from '@assemblerjs/core';
+import { router } from '@/windows/router';
+import App from './App';
+import { initializeContext } from '@/renderer/providers/AssemblerProvider';
+
+@Assemblage()
+class MainApp implements AbstractAssemblage {
+  constructor(@Context() private context: AssemblerContext) {}
+
+  public async onInit(): Promise<void> {
+    // Initialize global context for vanilla JS
+    initializeContext(this.context);
+
+    // Initialize vanilla JavaScript app with router
+    const appElement = document.getElementById('app');
+    if (!appElement) {
+      throw new Error('Root element not found');
+    }
+
     const app = new App();
     app.init(router);
     appElement.appendChild(app.render());
     console.log('Vanilla Router initialized');
-<% } %>  }
+  }
 }
 
 const task = Task.of(() => Assembler.build(MainApp));
 task
   .fork()
   .then(() => {
-    console.log('<%= framework.charAt(0).toUpperCase() + framework.slice(1) %> app was successfully built and mounted.');
+    console.log('Vanilla app was successfully built and mounted.');
   })
   .catch((error) => {
-    console.error('There was an error during <%= framework %> app build:', error);
+    console.error('There was an error during Vanilla app build:', error);
   });

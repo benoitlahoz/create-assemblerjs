@@ -1,0 +1,261 @@
+<% if (isVue()) { %>import { type Ref, watch } from 'vue';
+
+/**
+ * Reactive reference interface for Vue with optional subscribe support
+ */
+export interface ReactiveRef<T> extends Ref<T> {
+  subscribe?: (callback: (value: T) => void) => () => void;
+}
+
+/**
+ * Adds subscribe capability to a Vue ref
+ * 
+ * @param ref - The Vue ref
+ * @returns The ref with subscribe method
+ */
+export function makeSubscribable<T>(ref: Ref<T>): ReactiveRef<T> {
+  const refWithSubscribe = ref as ReactiveRef<T>;
+  
+  refWithSubscribe.subscribe = (callback: (value: T) => void) => {
+    // Call immediately with current value
+    callback(ref.value);
+    
+    // Watch for changes
+    const stop = watch(ref, (newValue) => {
+      callback(newValue);
+    });
+    
+    // Return unsubscribe function
+    return stop;
+  };
+  
+  return refWithSubscribe;
+}
+<% } else if (isReact()) { %>/**
+ * Reactive reference interface for React
+ * Wraps useState getter/setter in a .value API with optional subscription
+ */
+export interface ReactiveRef<T> {
+  get value(): T;
+  set value(v: T);
+  subscribe?: (callback: (value: T) => void) => () => void;
+}
+
+/**
+ * Creates a reactive reference for React from useState
+ * 
+ * @param getter - The state getter function
+ * @param setter - The state setter function
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const [count, setCount] = useState(0);
+ * const countRef = createReactRef(() => count, setCount);
+ * 
+ * // Subscribe to changes (useful outside React components)
+ * const unsubscribe = countRef.subscribe?.((value) => {
+ *   console.log('Count changed:', value);
+ * });
+ */
+export function createReactRef<T>(
+  getter: () => T,
+  setter: (value: T | ((prev: T) => T)) => void
+): ReactiveRef<T> {
+  const subscribers = new Set<(value: T) => void>();
+  
+  const originalSetter = setter;
+  const wrappedSetter = (value: T | ((prev: T) => T)) => {
+    originalSetter(value);
+    // Notify subscribers after state update
+    const newValue = typeof value === 'function' ? (value as (prev: T) => T)(getter()) : value;
+    subscribers.forEach(callback => callback(newValue));
+  };
+  
+  return {
+    get value() {
+      return getter();
+    },
+    set value(v: T) {
+      wrappedSetter(v);
+    },
+    subscribe(callback: (value: T) => void) {
+      subscribers.add(callback);
+      callback(getter()); // Call immediately with current value
+      return () => subscribers.delete(callback);
+    },
+  };
+}
+<% } else if (isSolid()) { %>import { type Accessor, type Setter, createEffect, onCleanup } from 'solid-js';
+
+/**
+ * Reactive reference interface for Solid
+ * Wraps Signal getter/setter in a .value API with subscription support
+ */
+export interface ReactiveRef<T> {
+  get value(): T;
+  set value(v: T);
+  subscribe?: (callback: (value: T) => void) => () => void;
+}
+
+/**
+ * Creates a reactive reference for Solid from createSignal
+ * 
+ * @param getter - The signal accessor
+ * @param setter - The signal setter
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const [count, setCount] = createSignal(0);
+ * const countRef = createSolidRef(count, setCount);
+ * 
+ * // Subscribe to changes
+ * const unsubscribe = countRef.subscribe?.((value) => {
+ *   console.log('Count changed:', value);
+ * });
+ */
+export function createSolidRef<T>(
+  getter: Accessor<T>,
+  setter: Setter<T>
+): ReactiveRef<T> {
+  return {
+    get value() {
+      return getter();
+    },
+    set value(v: T) {
+      setter(() => v);
+    },
+    subscribe(callback: (value: T) => void) {
+      let cleanup: (() => void) | undefined;
+      
+      // Use Solid's reactive system
+      createEffect(() => {
+        const value = getter();
+        callback(value);
+        
+        onCleanup(() => {
+          // Cleanup logic if needed
+        });
+      });
+      
+      // Return unsubscribe function
+      return () => {
+        if (cleanup) cleanup();
+      };
+    },
+  };
+}
+<% } else if (isSvelte()) { %>import { type Writable, get } from 'svelte/store';
+
+/**
+ * Reactive reference interface for Svelte
+ * Wraps Writable store in a .value API
+ */
+export interface ReactiveRef<T> {
+  get value(): T;
+  set value(v: T);
+  subscribe?: (callback: (value: T) => void) => () => void;
+  readonly store: Writable<T>;
+}
+
+/**
+ * Creates a reactive reference for Svelte from writable
+ * 
+ * @param store - The writable store
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const count = writable(0);
+ * const countRef = createSvelteRef(count);
+ * 
+ * // Subscribe to changes (uses native Svelte store subscription)
+ * const unsubscribe = countRef.subscribe?.((value) => {
+ *   console.log('Count changed:', value);
+ * });
+ */
+export function createSvelteRef<T>(store: Writable<T>): ReactiveRef<T> {
+  return {
+    get value() {
+      return get(store);
+    },
+    set value(v: T) {
+      store.set(v);
+    },
+    subscribe(callback: (value: T) => void) {
+      // Use native Svelte store subscription
+      return store.subscribe(callback);
+    },
+    store,
+  };
+}
+<% } else { %>/**
+ * Reactive reference interface for vanilla JS
+ * Simple object with getter/setter and subscription support
+ */
+export interface ReactiveRef<T> {
+  get value(): T;
+  set value(v: T);
+  subscribe?: (callback: (value: T) => void) => () => void;
+}
+
+/**
+ * Creates a reactive reference for vanilla JS with full reactivity
+ * Implements observer pattern for automatic updates
+ * 
+ * @param initialValue - The initial value
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const countRef = createVanillaRef(0);
+ * 
+ * // Subscribe to changes
+ * const unsubscribe = countRef.subscribe?.((value) => {
+ *   console.log('Count changed:', value);
+ *   document.getElementById('count').textContent = value;
+ * });
+ * 
+ * countRef.value = 5; // Triggers all subscribers
+ * 
+ * // Cleanup
+ * unsubscribe?.();
+ */
+export function createVanillaRef<T>(initialValue: T): ReactiveRef<T> {
+  let _value = initialValue;
+  const subscribers = new Set<(value: T) => void>();
+  
+  return {
+    get value() {
+      return _value;
+    },
+    set value(v: T) {
+      const changed = _value !== v;
+      _value = v;
+      
+      // Notify all subscribers only if value changed
+      if (changed) {
+        subscribers.forEach(callback => {
+          try {
+            callback(v);
+          } catch (error) {
+            console.error('Error in subscriber callback:', error);
+          }
+        });
+      }
+    },
+    subscribe(callback: (value: T) => void) {
+      subscribers.add(callback);
+      
+      // Call immediately with current value
+      try {
+        callback(_value);
+      } catch (error) {
+        console.error('Error in initial subscriber callback:', error);
+      }
+      
+      // Return unsubscribe function
+      return () => {
+        subscribers.delete(callback);
+      };
+    },
+  };
+}
+<% } %>

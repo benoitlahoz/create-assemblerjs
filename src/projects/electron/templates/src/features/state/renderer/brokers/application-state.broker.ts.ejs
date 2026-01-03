@@ -1,0 +1,232 @@
+import { AbstractAssemblage, Assemblage } from 'assemblerjs';
+import { BindThis } from '@assemblerjs/core';
+import { type ReactiveRef } from './reactive-adapter';
+
+/**
+ * Interface for a registered state in the broker
+ */
+interface RegisteredState {
+  /** The reactive reference (framework-agnostic) */
+  ref: ReactiveRef<any>;
+  /** Function to activate the state (optional) */
+  activate?: (value?: any) => void;
+  /** Function to deactivate the state (optional) */
+  deactivate?: () => void;
+  /** If true, deactivates all other states when activated */
+  exclusive?: boolean;
+}
+
+/**
+ * Generic broker to manage application state with framework-agnostic reactivity
+ * Compatible with Vue, React, Solid, Svelte, and Vanilla JS
+ * <% if (isVue()) { %>
+ * @example
+ * // Vue - Register a simple state
+ * import { ref } from 'vue';
+ * applicationStateBroker.register('isLoading', ref(false));
+ * <% } else if (isReact()) { %>
+ * @example
+ * // React - Register state from useState
+ * import { useState } from 'react';
+ * import { createRef } from './reactive-helpers';
+ * 
+ * function MyComponent() {
+ *   const [loading, setLoading] = useState(false);
+ *   const loadingRef = createRef(() => loading, setLoading);
+ *   
+ *   useEffect(() => {
+ *     applicationStateBroker.register('isLoading', loadingRef);
+ *   }, []);
+ * }
+ * <% } else if (isSolid()) { %>
+ * @example
+ * // Solid - Register state from createSignal
+ * import { createSignal } from 'solid-js';
+ * import { createRef } from './reactive-helpers';
+ * 
+ * const [loading, setLoading] = createSignal(false);
+ * const loadingRef = createRef(loading, setLoading);
+ * applicationStateBroker.register('isLoading', loadingRef);
+ * <% } else if (isSvelte()) { %>
+ * @example
+ * // Svelte - Register state from writable
+ * import { writable } from 'svelte/store';
+ * import { createRef } from './reactive-helpers';
+ * 
+ * const loading = writable(false);
+ * const loadingRef = createRef(loading);
+ * applicationStateBroker.register('isLoading', loadingRef);
+ * <% } else { %>
+ * @example
+ * // Vanilla - Register a simple state
+ * import { createRef } from './reactive-helpers';
+ * 
+ * const loadingRef = createRef(false);
+ * applicationStateBroker.register('isLoading', loadingRef);
+ * <% } %>
+ * 
+ * @example
+ * // Register a state with advanced management (all frameworks)
+ * applicationStateBroker.register('currentView', viewRef, {
+ *   activate: (value) => console.log('View activated:', value),
+ *   deactivate: () => console.log('View deactivated'),
+ *   exclusive: true // Deactivates other exclusive states
+ * });
+ */
+@Assemblage()
+export class ApplicationStateBroker implements AbstractAssemblage {
+  /** Map to store all registered states */
+  private readonly states = new Map<string, RegisteredState>();
+
+  /**
+   * Registers a new state in the broker
+   * 
+   * @param name - Unique name of the state
+   * @param refValue - Reactive reference (framework-specific)
+   * @param options - Options for state management
+   */
+  @BindThis()
+  public register<T = any>(
+    name: string,
+    refValue: ReactiveRef<T>,
+    options?: {
+      activate?: (value?: T) => void;
+      deactivate?: () => void;
+      exclusive?: boolean;
+    }
+  ): void {
+    if (this.states.has(name)) {
+      console.warn(`State "${name}" is already registered. It will be replaced.`);
+    }
+
+    this.states.set(name, {
+      ref: refValue,
+      activate: options?.activate,
+      deactivate: options?.deactivate,
+      exclusive: options?.exclusive ?? false,
+    });
+
+    // Dynamically create start/stop methods if they don't exist
+    const startMethod = `start${this.capitalize(name)}`;
+    const stopMethod = `stop${this.capitalize(name)}`;
+
+    if (!this[startMethod]) {
+      this[startMethod] = (value?: T) => this.activateState(name, value);
+    }
+    if (!this[stopMethod]) {
+      this[stopMethod] = () => this.deactivateState(name);
+    }
+  }
+
+  /**
+   * Retrieves a state reference by its name
+   * 
+   * @param name - Name of the state
+   * @returns The reactive reference or undefined
+   */
+  @BindThis()
+  public getState<T = any>(name: string): ReactiveRef<T> | undefined {
+    return this.states.get(name)?.ref as ReactiveRef<T> | undefined;
+  }
+
+  /**
+   * Activates a state
+   * 
+   * @param name - Name of the state to activate
+   * @param value - Optional value to assign
+   */
+  @BindThis()
+  public activateState(name: string, value?: any): void {
+    const state = this.states.get(name);
+    if (!state) {
+      console.warn(`State "${name}" does not exist.`);
+      return;
+    }
+
+    // If the state is exclusive, deactivate all other exclusive states
+    if (state.exclusive) {
+      this.resetExclusiveStates(name);
+    }
+
+    // Activate the state
+    if (value !== undefined) {
+      state.ref.value = value;
+    } else if (typeof state.ref.value === 'boolean') {
+      state.ref.value = true;
+    }
+
+    // Call activation callback if defined
+    state.activate?.(value);
+  }
+
+  /**
+   * Deactivates a state
+   * 
+   * @param name - Name of the state to deactivate
+   */
+  @BindThis()
+  public deactivateState(name: string): void {
+    const state = this.states.get(name);
+    if (!state) {
+      console.warn(`State "${name}" does not exist.`);
+      return;
+    }
+
+    // Call deactivation callback if defined
+    state.deactivate?.();
+
+    // Deactivate the state
+    if (typeof state.ref.value === 'boolean') {
+      state.ref.value = false;
+    } else {
+      state.ref.value = null;
+    }
+  }
+
+  /**
+   * Deactivates all exclusive states except the specified one
+   * 
+   * @param exceptName - Name of the state not to deactivate
+   */
+  @BindThis()
+  public resetExclusiveStates(exceptName?: string): void {
+    this.states.forEach((state, name) => {
+      if (state.exclusive && name !== exceptName) {
+        this.deactivateState(name);
+      }
+    });
+  }
+
+  /**
+   * Resets all states
+   */
+  @BindThis()
+  public resetAllStates(): void {
+    this.states.forEach((_, name) => {
+      this.deactivateState(name);
+    });
+  }
+
+  /**
+   * Removes a registered state
+   * 
+   * @param name - Name of the state to remove
+   */
+  @BindThis()
+  public unregister(name: string): void {
+    this.states.delete(name);
+    
+    const startMethod = `start${this.capitalize(name)}`;
+    const stopMethod = `stop${this.capitalize(name)}`;
+    
+    delete this[startMethod];
+    delete this[stopMethod];
+  }
+
+  /**
+   * Capitalizes the first letter of a string
+   */
+  private capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+}

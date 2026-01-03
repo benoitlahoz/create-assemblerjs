@@ -1,0 +1,64 @@
+import { AbstractAssemblage, Assemblage } from 'assemblerjs';
+import { ref } from 'vue';
+import { SettingsConfiguration } from '../../universal/types';
+import { PreferencesIpcChannel } from '@/preload/channels';
+import { ToastError, ToastSuccess } from '@/features/error-handler/universal/renderer';
+import { BindThis } from '@assemblerjs/core';
+import { SetPreferencesDto } from '../../universal/api-dto';
+import { type IpcReturnType, IpcOn, IpcListener, IpcResult, IpcInvoke } from '@assemblerjs/electron/renderer';@Assemblage()
+
+@IpcListener()
+export class PreferencesStore implements AbstractAssemblage {
+  public readonly preferences = ref<SettingsConfiguration | null>(null);
+
+  constructor() {}
+
+  public async onInit(): Promise<void> {
+    await this.getPreferences();
+  }
+
+  @BindThis()
+  @IpcInvoke(PreferencesIpcChannel.GetPreferences)
+  @ToastError()
+  public async getPreferences(
+    @IpcResult() result?: IpcReturnType<SettingsConfiguration>,
+  ): Promise<SettingsConfiguration | Error> {
+    const { data, err } = result || {};
+    if (err) {
+      return err;
+    }
+
+    this.preferences.value = data!;
+    return data!;
+  }
+
+  @BindThis()
+  @ToastSuccess('Préférences sauvegardées')
+  @ToastError()
+  @IpcInvoke(PreferencesIpcChannel.SetPreferences)
+  public setPreferences(
+    _data: SetPreferencesDto,
+    @IpcResult() result?: IpcReturnType<SettingsConfiguration>,
+  ): SettingsConfiguration | Error {
+    const { data, err } = result || {};
+    if (err) {
+      return err;
+    }
+
+    this.preferences.value = data || null;
+    return data || new Error('No preferences returned');
+  }
+
+  @BindThis()
+  @ToastError()
+  @IpcOn(PreferencesIpcChannel.UpdatedPreferences)
+  @ToastError()
+  public onUpdatedPreferences(@IpcResult() result?: IpcReturnType<SettingsConfiguration>): void {
+    const { data, err } = result || {};
+    if (err) {
+      return;
+    }
+
+    this.preferences.value = data || null;
+  }
+}

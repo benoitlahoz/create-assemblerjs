@@ -1,80 +1,38 @@
-import { AbstractAssemblage, Assemblage, Assembler } from 'assemblerjs';
+import { AbstractAssemblage, Assemblage, Assembler, Context, AssemblerContext } from 'assemblerjs';
 import { Task } from '@assemblerjs/core';
-<% if (isVue()) { %>import { createApp } from 'vue';
-import { router } from '@/windows/router';
-import App from './App.vue';
-<% } else if (isReact()) { %>import React from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import { router } from '@/windows/router';
-<% } else if (isSolid()) { %>import { render } from 'solid-js/web';
-import { AppRouter } from '@/windows/router';
-import App from './App';
-<% } else if (isSvelte()) { %>import { router } from '@/windows/router';
-import App from './App.svelte';
-<% } else { %>import { router } from '@/windows/router';
-import App from './App';
-<% } %>
+import { AssemblerProvider } from '@/renderer/providers/AssemblerProvider';
 
 @Assemblage()
 class MainApp implements AbstractAssemblage {
-<% if (isSvelte()) { %>  private app: App | null = null;
-<% } %>
-  constructor() {}
+  constructor(@Context() private context: AssemblerContext) {}
 
   public async onInit(): Promise<void> {
-<% if (isVue()) { %>    const app = createApp(App);
-    app.use(router);
-    app.mount('#app');
-    
-    await router.isReady();
-    console.log('Vue Router initialized');
-<% } else if (isReact()) { %>    const container = document.getElementById('root');
+    const container = document.getElementById('root');
     if (!container) {
       throw new Error('Root element not found');
     }
 
     const root = createRoot(container);
-    root.render(<RouterProvider router={router} />);
+    root.render(
+      <AssemblerProvider context={this.context}>
+        <RouterProvider router={router} />
+      </AssemblerProvider>
+    );
     console.log('React Router initialized');
-<% } else if (isSolid()) { %>    const root = document.getElementById('app');
-    if (!root) {
-      throw new Error('Root element not found');
-    }
-
-    render(() => <AppRouter />, root);
-    console.log('Solid Router initialized');
-<% } else if (isSvelte()) { %>    const target = document.getElementById('app');
-    if (!target) {
-      throw new Error('Root element not found');
-    }
-
-    this.app = new App({
-      target,
-      props: {
-        router: router
-      }
-    });
-    console.log('Svelte Router initialized');
-<% } else { %>    // Initialize vanilla JavaScript app with router
-    const appElement = document.getElementById('app');
-    if (!appElement) {
-      throw new Error('Root element not found');
-    }
-
-    const app = new App();
-    app.init(router);
-    appElement.appendChild(app.render());
-    console.log('Vanilla Router initialized');
-<% } %>  }
+  }
 }
 
+const task = Task.of(() => Assembler.build(MainApp));
 const task = Task.of(() => Assembler.build(MainApp));
 task
   .fork()
   .then(() => {
-    console.log('<%= framework.charAt(0).toUpperCase() + framework.slice(1) %> app was successfully built and mounted.');
+    console.log('React app was successfully built and mounted.');
   })
   .catch((error) => {
-    console.error('There was an error during <%= framework %> app build:', error);
+    console.error('There was an error during React app build:', error);
   });

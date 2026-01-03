@@ -1,0 +1,18 @@
+import { Dto } from '@assemblerjs/dto';
+import { IsArray, IsString } from 'class-validator';
+import { IsType } from './validator';
+
+@Dto()
+export class KeyValuePairDto {
+  @IsString()
+  key!: string;
+
+  @IsType(['string', 'number', 'boolean'])
+  value!: string | number | boolean;
+}
+
+@Dto()
+export class SetPreferencesDto {
+  @IsArray()
+  settings!: KeyValuePairDto[];
+}

@@ -1,0 +1,187 @@
+import {
+  type BigIntStats,
+  promises as fs,
+  statSync,
+  type Stats,
+  type PathLike,
+  Dirent,
+} from 'node:fs';
+import { dirname, basename, join } from 'node:path';
+import { is } from '@electron-toolkit/utils';
+import { asyncTryCatch, tryCatch } from '@assemblerjs/core';
+import { AbstractAssemblage, Assemblage } from 'assemblerjs';
+import { type FolderReadResult } from '@/features/fs/universal';
+
+@Assemblage()
+export class FsService implements AbstractAssemblage {
+  constructor() {}
+
+  public async ensureDir(path: string): Promise<void> {
+    const exists = await asyncTryCatch(() => fs.stat(path));
+    exists.fold<any, any>(
+      async () => await fs.mkdir(path, { recursive: true }),
+      () => {},
+    );
+  }
+
+  public async safeWriteFile(
+    filePath: string,
+    data: Record<string, any> | any[] | string,
+    options?: { overwrite?: boolean; append?: boolean },
+  ): Promise<void> {
+    await this.ensureDir(dirname(filePath));
+
+    const exists = await asyncTryCatch(() => fs.stat(filePath));
+    options = options || { overwrite: false, append: false };
+
+    const write = async () => {
+      if (options.append) {
+        await fs.appendFile(
+          filePath,
+          typeof data === 'string' ? data : JSON.stringify(data, null, is.dev ? 2 : 0),
+        );
+      } else if (options.overwrite) {
+        await this.writeFile(
+          filePath,
+          typeof data === 'string' ? data : JSON.stringify(data, null, is.dev ? 2 : 0),
+        );
+      }
+    };
+
+    exists.fold<any, any>(
+      async () => {
+        options.overwrite = true;
+        await write();
+      },
+      async () => {
+        if (options.overwrite || options.append) {
+          await write();
+        }
+      },
+    );
+  }
+
+  public async readFolder(
+    path: string,
+    options?: { extensions?: string[]; sortBy?: 'name' | 'date' },
+  ): Promise<FolderReadResult[]> {
+    const tryRead = await asyncTryCatch<FolderReadResult[]>(async () => {
+      const files = await fs.readdir(path, { withFileTypes: true, recursive: false });
+
+      let filteredFiles: Dirent[];
+      if (!options?.extensions || options.extensions.length === 0) {
+        filteredFiles = files;
+      } else {
+        filteredFiles = files.filter((file) => {
+          const ext = file.name.split('.').pop();
+          return ext && options.extensions?.includes(ext);
+        });
+      }
+
+      const filesWithTime: FolderReadResult[] = await Promise.all(
+        filteredFiles.map(async (file) => {
+          const stats = await this.stat(join(path, file.name));
+          return {
+            name: file.name,
+            mtime: stats?.mtime.getTime() || 0,
+            parentPath: path,
+            path: join(path, file.name),
+          };
+        }),
+      );
+
+      if (options?.sortBy === 'name') {
+        return filesWithTime.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (options?.sortBy === 'date') {
+        return filesWithTime.sort((a, b) => b.mtime - a.mtime);
+      }
+
+      return filesWithTime;
+    });
+
+    return tryRead.fold<FolderReadResult[], FolderReadResult[]>(
+      () => {
+        // TODO: Handle error.
+        return [] as FolderReadResult[];
+      },
+      (files) => files,
+    );
+  }
+
+  public async readFile(filePath: string): Promise<string | undefined> {
+    const tryRead = await asyncTryCatch(() => fs.readFile(filePath, 'utf-8'));
+    return tryRead.fold<string | undefined, undefined>(
+      () => {
+        // TODO: Handle error.
+        return undefined;
+      },
+      (data) => data,
+    );
+  }
+
+  public async writeFile(filePath: string, data: string | Buffer): Promise<void> {
+    const dir = dirname(filePath);
+    const file = basename(filePath);
+
+    await this.ensureDir(dir);
+
+    const success = await asyncTryCatch(() => fs.writeFile(join(dir, `.tmp.${file}`), data));
+    return success.fold(
+      async (err) => {
+        await fs.rm(join(dir, `.tmp.${file}`));
+        throw err;
+      },
+      async () => {
+        await fs.rename(join(dir, `.tmp.${file}`), join(dir, file));
+      },
+    );
+  }
+
+  public async stat(
+    path: PathLike,
+    options?: { bigint?: boolean | undefined },
+  ): Promise<Stats | BigIntStats | undefined> {
+    const tryStat = await asyncTryCatch(() => fs.stat(path, options));
+    return tryStat.fold<Stats | BigIntStats | undefined, undefined>(
+      () => {
+        // TODO: Handle error.
+        return undefined;
+      },
+      (stats) => stats,
+    );
+  }
+
+  public statSync(
+    path: PathLike,
+    options?: { bigint?: boolean | undefined },
+  ): Stats | BigIntStats | undefined {
+    const tryStat = tryCatch(() => statSync(path, options));
+    return tryStat.fold<Stats | BigIntStats | undefined, undefined>(
+      () => {
+        // TODO: Handle error.
+        return undefined;
+      },
+      (stats) => stats,
+    );
+  }
+
+  public async unlink(path: PathLike): Promise<void> {
+    const tryUnlink = await asyncTryCatch(() => fs.unlink(path));
+    tryUnlink.fold(
+      () => {
+        // TODO: Handle error -> inform user.
+      },
+      () => {},
+    );
+  }
+
+  public async removeFolder(path: string, recursive = true): Promise<void> {
+    const tryRm = await asyncTryCatch(() => fs.rm(path, { recursive, force: true }));
+    tryRm.fold(
+      () => {
+        // TODO: Handle error -> inform user.
+      },
+      () => null,
+    );
+  }
+}

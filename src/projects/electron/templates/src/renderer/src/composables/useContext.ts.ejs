@@ -1,0 +1,99 @@
+<% if (isVue()) { %>import { inject } from 'vue';
+import { ContextInjectionKey } from '@/renderer/constants/injection.keys';
+
+/**
+ * Vue composable to access the AssemblerJS context
+ * 
+ * @example
+ * const context = useContext();
+ * const appState = context.require(ApplicationStateBroker);
+ */
+export const useContext = () => {
+  const context = inject(ContextInjectionKey);
+  if (!context) {
+    throw new Error('AssemblerContext could not be injected.');
+  }
+  return context;
+};
+<% } else if (isReact()) { %>import { useContext as useReactContext } from 'react';
+import { AssemblerReactContext } from '@/renderer/constants/injection.keys';
+
+/**
+ * React hook to access the AssemblerJS context
+ * 
+ * @example
+ * const context = useContext();
+ * const appState = context.require(ApplicationStateBroker);
+ */
+export const useContext = () => {
+  const context = useReactContext(AssemblerReactContext);
+  if (!context) {
+    throw new Error('AssemblerContext could not be injected. Make sure you wrapped your app with AssemblerProvider.');
+  }
+  return context;
+};
+<% } else if (isSolid()) { %>import { useContext as useSolidContext } from 'solid-js';
+import { AssemblerSolidContext } from '@/renderer/constants/injection.keys';
+
+/**
+ * Solid hook to access the AssemblerJS context
+ * 
+ * @example
+ * const context = useContext();
+ * const appState = context.require(ApplicationStateBroker);
+ */
+export const useContext = () => {
+  const context = useSolidContext(AssemblerSolidContext);
+  if (!context) {
+    throw new Error('AssemblerContext could not be injected. Make sure you wrapped your app with AssemblerProvider.');
+  }
+  return context;
+};
+<% } else if (isSvelte()) { %>import { getContext } from 'svelte';
+import { AssemblerContext } from 'assemblerjs';
+import { ASSEMBLER_CONTEXT_KEY } from '@/renderer/constants/injection.keys';
+
+/**
+ * Svelte helper to access the AssemblerJS context
+ * 
+ * @example
+ * const context = useContext();
+ * const appState = context.require(ApplicationStateBroker);
+ */
+export const useContext = (): AssemblerContext => {
+  const context = getContext<AssemblerContext>(ASSEMBLER_CONTEXT_KEY);
+  if (!context) {
+    throw new Error('AssemblerContext could not be injected. Make sure you set the context in your root component.');
+  }
+  return context;
+};
+<% } else { %>import { AssemblerContext } from 'assemblerjs';
+
+/**
+ * Global context storage for Vanilla JS
+ */
+let globalContext: AssemblerContext | null = null;
+
+/**
+ * Sets the global AssemblerJS context (call this once at app initialization)
+ * 
+ * @param context - The AssemblerContext instance
+ */
+export const setContext = (context: AssemblerContext): void => {
+  globalContext = context;
+};
+
+/**
+ * Vanilla JS helper to access the AssemblerJS context
+ * 
+ * @example
+ * const context = useContext();
+ * const appState = context.require(ApplicationStateBroker);
+ */
+export const useContext = (): AssemblerContext => {
+  if (!globalContext) {
+    throw new Error('AssemblerContext is not initialized. Make sure you called setContext() at app startup.');
+  }
+  return globalContext;
+};
+<% } %>

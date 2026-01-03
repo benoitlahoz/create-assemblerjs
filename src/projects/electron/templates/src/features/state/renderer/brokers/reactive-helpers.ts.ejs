@@ -1,0 +1,157 @@
+<% if (isVue()) { %>import { ref, computed, type Ref, type ComputedRef } from 'vue';
+import { type ReactiveRef } from './reactive-adapter';
+
+/**
+ * Creates a reactive reference (alias for Vue's ref)
+ * 
+ * @param initialValue - The initial value
+ * @returns A Vue reactive reference
+ * 
+ * @example
+ * const count = createRef(0);
+ * count.value++; // Triggers reactivity
+ */
+export function createRef<T>(initialValue: T): ReactiveRef<T> {
+  return ref(initialValue);
+}
+
+/**
+ * Creates a computed reactive reference
+ * 
+ * @param getter - The computed getter function
+ * @returns A Vue computed reference
+ * 
+ * @example
+ * const count = ref(0);
+ * const doubled = createComputed(() => count.value * 2);
+ */
+export function createComputed<T>(getter: () => T): ComputedRef<T> {
+  return computed(getter);
+}
+<% } else if (isReact()) { %>import { type ReactiveRef, createReactRef } from './reactive-adapter';
+
+/**
+ * Helper to create a reactive reference from React state
+ * Note: This should be called inside a React component
+ * 
+ * @param state - The state value
+ * @param setState - The setState function
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * function MyComponent() {
+ *   const [count, setCount] = useState(0);
+ *   const countRef = createRef(() => count, setCount);
+ *   
+ *   // Register in broker
+ *   useEffect(() => {
+ *     broker.register('count', countRef);
+ *   }, []);
+ * }
+ */
+export function createRef<T>(
+  getter: () => T,
+  setter: (value: T | ((prev: T) => T)) => void
+): ReactiveRef<T> {
+  return createReactRef(getter, setter);
+}
+
+/**
+ * Alternative: Create ref from useState return value
+ * 
+ * @param state - The [state, setState] tuple from useState
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const countState = useState(0);
+ * const countRef = createRefFromState(countState);
+ */
+export function createRefFromState<T>(
+  state: [T, (value: T | ((prev: T) => T)) => void]
+): ReactiveRef<T> {
+  const [getValue, setValue] = state;
+  return createReactRef(() => getValue, setValue);
+}
+<% } else if (isSolid()) { %>import { type Accessor, type Setter } from 'solid-js';
+import { type ReactiveRef, createSolidRef } from './reactive-adapter';
+
+/**
+ * Creates a reactive reference from Solid signal
+ * 
+ * @param getter - The signal accessor
+ * @param setter - The signal setter
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const [count, setCount] = createSignal(0);
+ * const countRef = createRef(count, setCount);
+ */
+export function createRef<T>(
+  getter: Accessor<T>,
+  setter: Setter<T>
+): ReactiveRef<T> {
+  return createSolidRef(getter, setter);
+}
+
+/**
+ * Alternative: Create ref from createSignal return value
+ * 
+ * @param signal - The [getter, setter] tuple from createSignal
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const countSignal = createSignal(0);
+ * const countRef = createRefFromSignal(countSignal);
+ */
+export function createRefFromSignal<T>(
+  signal: [Accessor<T>, Setter<T>]
+): ReactiveRef<T> {
+  const [getter, setter] = signal;
+  return createSolidRef(getter, setter);
+}
+<% } else if (isSvelte()) { %>import { writable, type Writable } from 'svelte/store';
+import { type ReactiveRef, createSvelteRef } from './reactive-adapter';
+
+/**
+ * Creates a reactive reference from Svelte store
+ * 
+ * @param store - The writable store
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const count = writable(0);
+ * const countRef = createRef(count);
+ */
+export function createRef<T>(store: Writable<T>): ReactiveRef<T> {
+  return createSvelteRef(store);
+}
+
+/**
+ * Creates a new writable store and returns it as ReactiveRef
+ * 
+ * @param initialValue - The initial value
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const countRef = createRefFromValue(0);
+ * countRef.value++; // Updates the store
+ */
+export function createRefFromValue<T>(initialValue: T): ReactiveRef<T> {
+  return createSvelteRef(writable(initialValue));
+}
+<% } else { %>import { type ReactiveRef, createVanillaRef } from './reactive-adapter';
+
+/**
+ * Creates a reactive reference for vanilla JS
+ * 
+ * @param initialValue - The initial value
+ * @returns A ReactiveRef compatible with the broker
+ * 
+ * @example
+ * const count = createRef(0);
+ * count.value++; // Simple getter/setter
+ */
+export function createRef<T>(initialValue: T): ReactiveRef<T> {
+  return createVanillaRef(initialValue);
+}
+<% } %>

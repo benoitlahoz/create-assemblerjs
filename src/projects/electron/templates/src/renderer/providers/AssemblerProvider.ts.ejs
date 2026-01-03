@@ -1,0 +1,92 @@
+<% if (isReact()) { %>import React, { ReactNode } from 'react';
+import { AssemblerReactContext } from '@/renderer/constants/injection.keys';
+import { AssemblerContext } from 'assemblerjs';
+
+interface AssemblerProviderProps {
+  context: AssemblerContext;
+  children: ReactNode;
+}
+
+/**
+ * React provider component for AssemblerJS context
+ * Wrap your root component with this provider
+ * 
+ * @example
+ * <AssemblerProvider context={assembler.getContext()}>
+ *   <App />
+ * </AssemblerProvider>
+ */
+export const AssemblerProvider: React.FC<AssemblerProviderProps> = ({ context, children }) => {
+  return (
+    <AssemblerReactContext.Provider value={context}>
+      {children}
+    </AssemblerReactContext.Provider>
+  );
+};
+<% } else if (isSolid()) { %>import { JSX } from 'solid-js';
+import { AssemblerSolidContext } from '@/renderer/constants/injection.keys';
+import { AssemblerContext } from 'assemblerjs';
+
+interface AssemblerProviderProps {
+  context: AssemblerContext;
+  children: JSX.Element;
+}
+
+/**
+ * Solid provider component for AssemblerJS context
+ * Wrap your root component with this provider
+ * 
+ * @example
+ * <AssemblerProvider context={assembler.getContext()}>
+ *   <App />
+ * </AssemblerProvider>
+ */
+export const AssemblerProvider = (props: AssemblerProviderProps) => {
+  return (
+    <AssemblerSolidContext.Provider value={props.context}>
+      {props.children}
+    </AssemblerSolidContext.Provider>
+  );
+};
+<% } else if (isSvelte()) { %>/**
+ * Svelte context helper
+ * Use setContext in your root component (e.g., App.svelte)
+ * 
+ * @example
+ * <script lang="ts">
+ *   import { setContext } from 'svelte';
+ *   import { ASSEMBLER_CONTEXT_KEY } from '@/renderer/constants/injection.keys';
+ *   
+ *   // Assuming you have access to the assembler instance
+ *   setContext(ASSEMBLER_CONTEXT_KEY, assembler.getContext());
+ * </script>
+ */
+
+// No provider component needed for Svelte
+// Context is set directly in components using setContext
+export {};
+<% } else if (isVanilla()) { %>/**
+ * Vanilla JS context initialization
+ * Call this once at app startup before using useContext()
+ * 
+ * @example
+ * import { initializeContext } from '@/renderer/providers/AssemblerProvider';
+ * import { Assembler } from 'assemblerjs';
+ * 
+ * const assembler = new Assembler();
+ * await assembler.bootstrap(MainApp);
+ * initializeContext(assembler.getContext());
+ */
+
+import { setContext } from '@/renderer/composables/useContext';
+import { AssemblerContext } from 'assemblerjs';
+
+export const initializeContext = (context: AssemblerContext): void => {
+  setContext(context);
+};
+<% } else { %>/**
+ * Vue uses provide/inject natively
+ * See the main.ts file for context provision
+ */
+export {};
+<% } %>

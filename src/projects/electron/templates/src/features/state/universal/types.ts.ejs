@@ -1,0 +1,41 @@
+export interface SettingsConfiguration {
+  filename?: string;
+  loans: {
+    defaultLoanDays: number;
+    maxLoansPerUser: number;
+    archiveOldLoans: boolean;
+  };
+  booksApi: {
+    services: {
+      google: boolean;
+      openLibrary: boolean;
+    };
+    importMethod: {
+      steps: boolean;
+      camera: boolean;
+    };
+  };
+  barCodes: {
+    qr: {
+      camera: boolean;
+      margin: number;
+      label: number;
+      code: number;
+    };
+  };
+  school: {
+    createDefault: boolean;
+    defaultName: string;
+    defaultZone: string;
+    defaultAcademy: string;
+    zones?: string[];
+    academies?: string[];
+  };
+  application: {
+    maxBackupFiles: number;
+    maxLogFiles: number;
+    tips: {
+      show: boolean;
+    };
+  };
+}
