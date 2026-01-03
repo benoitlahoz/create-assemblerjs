@@ -6,7 +6,7 @@ import {
   type CommandServiceConfig,
   type PositionalArgConfig,
 } from './command.abstract';
-import { type AnyFunction, isUndefined, switchCase } from '@assemblerjs/core';
+import {isUndefined } from '@assemblerjs/core';
 
 @Assemblage()
 export class CommandService implements AbstractCommandService {

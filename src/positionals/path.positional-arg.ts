@@ -27,15 +27,15 @@ export class PathPositionalArg implements AbstractPathPositionalArg {
 
         console.log('Coerce path:', path);
 
-        // Si un chemin est fourni, on le stocke pour traitement ultérieur
+        // If a path is provided, store it for later processing
         if (path) {
           this.bootstrapValues['path'] = path;
-          // On marque qu'on doit vérifier les conflits plus tard quand name sera disponible
+          // Mark that we need to check for conflicts later when name is available
           this.bootstrapValues['_pathToCheck'] = path;
           return path;
         }
 
-        // Si aucun chemin n'est fourni, retourner undefined pour déclencher le prompt
+        // If no path is provided, return undefined to trigger the prompt
         return undefined;
       },
       /*
@@ -73,13 +73,13 @@ export class PathPositionalArg implements AbstractPathPositionalArg {
         filter: (input) => {
           return isAbsolute(input)
             ? input
-            : resolve(this.env.runningPath, input);
+            : resolve(this.env.runningPath, input, process.env.NODE_ENV === 'development' ? '.private' : '');
         },
         question: async (answers: Record<string, any>) => {
-          // Cette fonction se déclenche seulement si coerce retourne undefined
+          // This function triggers only if coerce returns undefined
           while (true) {
             const answer = await this.promptPath();
-            const resolvedPath = join(answer, answers['name']);
+            const resolvedPath = join(answer, answers['name'], process.env.NODE_ENV === 'development' ? '.private' : '');
 
             if (this.pathExists(resolvedPath)) {
               const overwrite = await this.promptOverwrite(resolvedPath);
@@ -107,7 +107,7 @@ export class PathPositionalArg implements AbstractPathPositionalArg {
         type: 'input',
         name: 'path',
         message: 'Path where the package will be created:',
-        default: this.env.runningPath,
+        default: process.env.NODE_ENV === 'development' ? resolve(this.env.runningPath, '.private') : this.env.runningPath,
         validate: (input: string) => {
           if (!input || input.length === 0) {
             return 'Path cannot be empty.';
